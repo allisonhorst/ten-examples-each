@@ -1,0 +1,139 @@
+---
+title: "Ten examples of getting started with functions"
+author: "Allison Horst"
+date: "5/9/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Step 0: Read chapter on functions in R4DS
+
+[https://r4ds.had.co.nz/functions.html](R4DS Ch. 19 - Functions)
+
+Load the tidyverse:
+```{r, warning = FALSE, message = "hide"}
+suppressMessages(library(tidyverse))
+```
+
+### Example 1. The simplest little function with a single input
+
+Create a function 'function_one' where you input an argument (x), and it calculates x^2 and returns the value.
+
+```{r}
+
+function_one <- function(x){ 
+  squared <- x^2
+  return(squared)
+}
+
+function_one(3) # Note that this returns 9
+function_one(212) # And this returns 212^2 = 44944
+
+```
+
+### Example 2. A function with multiple inputs
+
+```{r}
+
+function_two <- function(a,b){
+  burrito <- a + b
+  return(burrito)
+}
+
+function_two(2,6)
+
+```
+
+### Example 3. A function with named variables
+
+- Add as many arguments as you want in the function: function(arg_1, arg_2, arg_3)
+
+- Remember to use thoughtful/logical/nice names (possibly descriptive, concise, snake_case)
+
+- You can create variables outside the function that are called (good for running through vectors/matrices!)
+
+```{r}
+
+apple <- 10
+banana <- 6
+
+function_three <- function(apple, banana, orange){
+  fruit <- apple/orange + banana
+  return(fruit)
+}
+
+function_three(apple, banana, 2) # Notice that I give the two assigned variable names here, but then give it a value for 'orange' because that wasn't specified previously
+
+# You can also specify values later on: 
+
+function_three(5, banana, 2)
+
+```
+
+### Example 4. A function with vector input(s)
+
+Sometimes you want to pass a bunch of values through a function and see what the outcomes are. That's fine! Make some vectors (matrices later...) and plug in those variables:
+
+```{r}
+
+dog <- c(1,2,3,20) # A vector called 'dog'
+cat <- c(6,7,8,9) # A vector called 'cat'
+
+function_four <- function(dog,cat){
+  daily_pets <- dog*2 + cat/3
+  return(daily_pets)
+}
+
+```
+
+### Example 5. A function with inputs from a data frame / tibble
+
+You can even get vectors from columns in a data frame! Here, I'll make some mock data, then feed the columns into a function:
+
+```{r}
+# Make a little tibble:
+fun_df <- tribble(
+  ~e,~f,~g,
+  0,1,2,
+  3,4,5,
+  6,7,8
+)
+
+# Write a function:
+
+function_five <- function(arg_1, arg_2){
+  output <- arg_1 + arg_2
+  return(output)
+}
+
+# And this calculates the sum of values in columns e and f, for each row:
+function_five(arg_1 = fun_df$e, arg_2 = fun_df$f) # Returns: 1  7  13
+
+# Note: yes, in this case it's way easier to just use dplyr::mutate()
+
+```
+
+### Example 6. A function with conditions (using switch())
+
+Sometimes you'll want a function to do different operations but use a generally similar function. You can use the switch() function to specify different selections (similar to using an if-else statement).
+
+In this example: I want to write a function that either calculates the ratio as a decimal or percentage for two input values.
+
+*Note: this doesn't seem quite right...*
+
+```{r}
+
+function_six <- function(val_1,val_2,to_do){
+  switch(to_do,
+         calc_decimal = val_1/val_2,
+         calc_percent = 100*val_1/val_2
+  )
+}
+
+function_six(10,30,2)
+
+```
+

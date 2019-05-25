@@ -1,0 +1,164 @@
+---
+title: "Ten examples with NAs"
+author: "Allison Horst"
+date: "5/3/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Note: for examples on assessing / visualizing missingness, see [naniar package](https://cran.r-project.org/web/packages/naniar/vignettes/getting-started-w-naniar.html). 
+
+Load the tidyverse and janitor:
+```{r, warning = FALSE, message = "hide"}
+suppressMessages(library(tidyverse))
+suppressMessages(library(janitor))
+```
+
+Make some mock data:
+```{r}
+
+df <- tribble(
+  ~red, ~orange, ~yellow, ~green, ~blue, ~purple,
+  NA, 2, 3, NA, "bird", NA,
+  0, 5, 100, "no", "dog", NA, 
+  NA, 20, NA, "yes", "cat", NA,
+  100, 200, 300, "no", "bird", 4
+)
+
+```
+
+
+### Example 1. Filter out observations (rows) with NA values for a selected variable
+
+*Only keep rows where yellow is NOT 'NA':*
+
+```{r}
+
+df_1 <- df %>% 
+  dplyr::filter(!is.na(yellow)) # Note exclamation point for "NOT"
+
+```
+
+### Example 2. Remove rows that contains _any_ NAs across variables
+
+*Use tidyr::drop_na() to return rows with no NA values (only row 4 here):*
+
+See also: na.omit()
+
+See also: complete.cases
+
+See also: ggplot2::remove_missing
+
+```{r}
+
+df_2 <- df %>% 
+  tidyr::drop_na()
+
+```
+
+### Example 3. Remove columns/rows that **only** contains NA
+
+*Use janitor::remove_empty() to get rid of columns/rows full of NAs:*
+(yeah in this case there isn't one, so all columns are retained...)
+
+```{r}
+
+df_3 <- df %>% 
+  janitor::remove_empty("cols") # Can switch to "rows" to remove rows with only NAs!
+
+```
+
+### Example 4. Set NA values to something else, by column
+
+*If red is NA, set value to 500; if purple is NA, set to "yay" using tidyr::replace_na:*
+
+```{r}
+
+df_4 <- df %>% 
+  tidyr::replace_na(list(red = 500, purple = "yay"))
+
+```
+
+### Example 5. Replace *all* NAs in a data frame with something
+
+*Anywhere NA shows up, replace with "not recorded":*
+
+```{r}
+
+df_5 <- df %>% 
+  replace(., is.na(.), "unrecorded") # Use '.' for across all columns...
+
+```
+
+### Example 6. Within columns, replace value/character with NA
+
+*If column 'blue' is "bird", make that cell NA using dplyr::na_if:*
+
+See also: naniar::replace_with_na()
+
+Note: here, this column overwrites original 'blue' column; consider makign the column within mutate() a different name to add another column (vs. replace existing)
+
+```{r}
+
+df_6 <- df %>% 
+  dplyr::mutate(
+    blue = dplyr::na_if(blue, "bird")
+  )
+
+```
+
+### Example 7. Across all columns, replace value / character with NAs
+
+*Anywhere the value 100 shows up in the data frame, replace with NA:*
+
+```{r}
+
+df_7 <- df %>% 
+  dplyr::na_if(., 100) # In my head, '.' indicates across all?
+
+```
+
+### Example 8. Remove any column with **any** NA values (not sure why you'd want to do this, but anyway...)
+
+*Remove any columns containing at least one NA value using a combination of select_if, any, and is.na:*
+
+```{r}
+
+df_8 <- df %>% 
+  dplyr::select_if(~ !any(is.na(.))) # Looks for NAs across all columns; says only select (keep) columns if there are NOT (!) any NAs (not even sure if I'm interpreting that weird syntax right but whatever)
+
+```
+
+### Example 9. Omit NAs from a vector for a calculation (or sometimes a plot, or whatever...)
+
+```{r}
+
+# Uh-oh version:
+yellow_mean_na <- mean(df$yellow) # Returns NA because there is an NA in that column
+
+# The thing you probably want: 
+yellow_mean <- mean(df$yellow, na.rm = TRUE) # Returns 6.5 (omits NA in calculation)
+
+# Similarly: 
+
+yellow_mean_b <- df %>% 
+  pull(yellow) %>% # Pulls out just the vector data (values/entries in that column)
+  mean(na.rm = TRUE)  
+
+```
+
+
+### Example 10. NAs in ggplot2 graphs?
+
+```{r}
+
+ggplot(df, aes(x = orange, y = yellow)) +
+  geom_point()
+
+# Handles it: note warning "Removed 1 rows containing missing values (geom_point)."
+
+```
+

@@ -1,0 +1,87 @@
+---
+title: "Ten examples with tidyr::gather and tidyr::spread"
+author: "Allison Horst"
+date: "5/3/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Use gather() and spread() from the tidyr package (in the tidyverse) to convert data from wide to long format and back (usually with a goal of getting one variable into a single column using gather...)
+
+Load the tidyverse:
+```{r, warning = FALSE, message = "hide"}
+suppressMessages(library(tidyverse))
+```
+
+Make mock data: 
+```{r}
+
+df <- tribble(
+  ~replicate, ~control, ~low_dose, ~medium_dose,
+  1, 4.0, 1.0, 2.2,
+  2, 3.5, 0.8, 2.6,
+  3, 5.2, 1.1, 2.7,
+  4, 3.8, 0.9, 2.1
+)
+
+```
+
+### Example 1. Gather all treatment outcomes (from control to medium_dose) into a single column
+
+*To get these data into tidy format, I want to create a single column ('treatment') that contains the names of the treatments - using current column names, and compress all values into a single column 'measure':*
+
+Create a key-value pair (key ('treatment'): one column that will contain the combined column names, compressed into a single column, value ('measure'): the column that all initial observations from those columns will be compressed into).
+```{r}
+
+df_1 <- df %>% 
+  gather("treatment","measure", control:medium_dose)
+
+# Check out & understand what that does before moving on
+
+# The following does the same thing (gathers all columns EXCEPT replicate):
+
+df_1_b <- df %>% 
+  gather("treatment","measure", -replicate)
+
+```
+
+### Example 2. What happens to all columns not gathered? They repeat enough times to populate the same length as the key-value pair. 
+
+Here, I only gather the control and low_dose columns; the others (replicate and medium_dose) are repeated as necessary to match the length of the gathered column. 
+
+Note: I have no idea why you would actually want to do this, but it's good to see what happens...
+```{r}
+
+df_2 <- df %>% 
+  gather("treatment","measure", control:low_dose)
+
+```
+
+### Example 3. Gather when years are the existing column headers (pretty common scenario)
+
+I'll make separate mock data for this example: 
+```{r}
+
+df_years <- tribble(
+  ~country, ~"1990", ~"1995", ~"2000", ~"2005",
+  "Chile", 2, 6, NA, 10,
+  "Mexico", 5, 4, 11, 8,
+  "Argentina", NA, 14, 10, 7,
+  "Guatemala", 3, 20, 18, 22
+)
+
+```
+
+Then gather all years into a single column 'years', with the values gathered into column 'amount':
+```{r}
+
+df_3 <- df_years %>% 
+  gather("year","amount",'1990':'2005') %>% # Does the gathering
+  mutate(year = as.numeric(year)) # Overwrites year column with numeric version
+
+```
+
+

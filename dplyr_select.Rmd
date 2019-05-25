@@ -1,0 +1,152 @@
+---
+title: "Ten examples using dplyr::select"
+author: "Allison Horst"
+date: "5/3/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Use **dplyr::select** to select, de-select, or re-order columns in a data frame. 
+
+Documentation: [dplyr::select](https://dplyr.tidyverse.org/reference/select.html)
+Select helpers: [click here](https://www.rdocumentation.org/packages/tidyselect/versions/0.2.5/topics/select_helpers)
+
+Remember: [dplyr::slice()](https://dplyr.tidyverse.org/reference/slice.html) for rows selection/exclusion
+
+Load the tidyverse:
+```{r, warning = FALSE}
+suppressMessages(library(tidyverse)) # load tidyverse & suppress messages
+```
+
+Make some mock data:
+```{r}
+
+df <- tribble(
+  ~red, ~orange, ~yellow, ~green, ~blue,
+  1, 2, 3, "yes", "bird",
+  0, 5, 10, "no", "dog",
+  NA, 20, NA, "yes", "cat"
+)
+
+```
+
+
+### Example 1: Select one column
+
+*Create new data frame df_1 that only contains column 'yellow'.*
+
+```{r}
+
+df_1 <- df %>% 
+  select(yellow) # alternatively, select(df, yellow)
+
+```
+
+### Example 2: Select multiple sequential columns:
+
+*Select columns orange through green:*
+
+```{r}
+
+df_2 <- df %>% 
+  select(orange:green) # alternatively, select(df, orange:green)
+
+```
+
+### Example 3: Select multiple non-sequential columns:
+
+*Select columns red and yellow:*
+
+```{r}
+
+df_3 <- df %>% 
+  select(red, yellow) # alternatively, select(df, red, yellow)
+
+```
+
+### Example 4: Select a combination of sequential and non-sequential columns:
+
+*Select columns orange and green through blue:*
+
+```{r}
+
+df_4 <- df %>% 
+  select(orange, green:blue) # alternatively, select(df, orange, green:blue)
+
+```
+
+### Example 5: Remove column with a minus sign in select:
+
+*Keep everything _except_ orange:*
+
+```{r}
+
+df_5 <- df %>% 
+  select(-orange) # alternatively, select(df, -orange)
+
+```
+
+### Example 6: Select any column that contains a designated string in the name:
+
+*Keep all columns where the string "re" shows up in the name (here, in "red" and "green"):*
+
+```{r}
+
+df_6 <- df %>% 
+  select(contains("re"))
+
+```
+
+### Example 7: Keep columns that start with or end with a designated string:
+
+*Keep only columns that end in "e" using ends_with (alternative is starts_with):*
+
+```{r}
+
+df_7 <- df %>% 
+  select(ends_with("e"))
+
+```
+
+
+### Example 8: Keep selected and reorder
+
+*Keep only columns green, blue, and orange in that order:*
+
+```{r}
+
+df_8 <- df %>% 
+  select(green, blue, orange)
+
+```
+
+
+### Example 9. Use it in combination with other functions
+
+*Only keep observations (rows) where 'green' matches "yes", then only keep columns green and red, then rename green to 'lime'.*
+
+```{r}
+
+df_9 <- df %>% 
+  filter(green == "yes") %>% 
+  select(green, red) %>% 
+  rename(lime = green)
+
+```
+
+### Example 10. Another combination example
+
+*Deselect columns if their name contains an "o", filter to only keep observations where red is not NA.*
+
+```{r}
+
+df_10 <- df %>% 
+  select(-contains("o")) %>% 
+  filter(!is.na(red))
+
+```
+
+### Future things to try: select_if, select_at, rename_if, rename_at, rename_all

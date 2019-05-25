@@ -1,0 +1,353 @@
+---
+title: "Ten examples using purrr::map"
+author: "Allison Horst"
+date: "5/23/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load the tidyverse: 
+```{r message = FALSE, warning = FALSE}
+library(tidyverse)
+library(broom)
+library(magrittr)
+```
+
+#### Resources I used:
+
+- R4DS [Chapter 21 - Iteration](https://r4ds.had.co.nz/iteration.html):
+
+    "The pattern of looping over a vector, doing something to each element and saving the results is so common that the purrr package provides a family of functions to do it for you. There is one function for each type of output:
+
+    - map() makes a list.
+
+    - map_lgl() makes a logical vector.
+
+    - map_int() makes an integer vector.
+
+    - map_dbl() makes a double vector.
+
+    - map_chr() makes a character vector."
+
+- Thomas Mock wrote a great [summary](https://towardsdatascience.com/functional-programming-in-r-with-purrr-469e597d0229) that helped me out
+
+- [Jenny Bryan's introduction to map()](https://jennybc.github.io/purrr-tutorial/ls01_map-name-position-shortcuts.html)
+
+- How to use purrr::map to [loop](https://sebastiansauer.github.io/looping-purrr/) through t-tests by Sebastian Sauer
+
+- [Bruno Rodrigues](https://www.brodrigues.co/blog/2017-03-24-lesser_known_purrr/)' post on purrr
+
+*I think of purrr::map as a way for me to avoid most for loops  and similar functions (e.g. apply, lapply, etc.), but it's a function that really is easier understood by trying some examples. Here are 10!*
+
+## Ten simple examples of how to use the purrr::map functions. 
+
+### Example 1. Apply a function to entries in a vector, return list
+```{r}
+# Create a simple vector
+my_vector <- c(0,2,4,6)
+
+# Use map() to find the square root of each value in the vector:
+
+my_vector_sr <- my_vector %>% 
+  map(sqrt) # Returns a list of 4 values (the square roots of 0, 2, 4, and 6)
+
+my_vector_sr
+
+```
+
+### Example 2. Apply a function to return information about columns
+```{r}
+
+# Create a simple mock df called temp_df
+temp_df <- tribble(
+  ~day, ~temp_morn, ~temp_aft, ~temp_evening, 
+  "Monday", 71, 74, 58, 
+  "Tuesday", 65, 70, 72,
+  "Wednesday", 51, 58, 61,
+  "Thursday", 55, 63, 63,
+  "Friday", 58, 70, 69,
+  "Saturday", 68, 78, 75,
+  "Sunday", 74, 85, 81
+)
+
+# Find the maximum value in columns 2:4 of temp_df:
+temp_max <- temp_df[2:4] %>% 
+  map(max)
+
+# Alternatively: 
+temp_map_alt <- temp_df %>% 
+  select(temp_morn:temp_evening) %>% 
+  map(max)
+
+# Find the mean of the temp_morn:temp_evening columns:
+temp_mean <- temp_df %>% 
+  select(temp_morn:temp_evening) %>% 
+  map(mean)
+
+temp_mean # Check it out!
+
+# Note that you can recall outcomes using the $ sign:
+temp_mean$temp_aft # The mean value of the temp_aft column
+```
+
+### Example 3. Map to characters (map_chr)
+
+The map() function has nice extensions to specify the output class. See the list at the top for some of the options. 
+```{r}
+
+# Make some mock data:
+plants_df <- tribble(
+  ~type, ~color, ~height, ~girth,
+  "tree", "green", 4, 0.3,
+  "tree", "blue", 6, 0.4,
+  "tree", "green", 5, 0.7,
+  "bush", "green", 2, 0.6, 
+  "tree", "purple", 8, 1.2, 
+  "bush", "green", 10, 1.4,
+  "tree", "blue", 7, 0.9
+)
+```
+
+I want to report the **max** (alphabetically, last) outcomes in the 'type' and 'color' columns, as characters. Not sure why you'd want to do this, but anyway... 
+```{r}
+
+plant_z <- plants_df %>% 
+  select(type, color) %>% 
+  map_chr(max) # Returns "tree" and "purple"
+
+plant_z
+
+# Similarly, for minimum (alphabetically, first):
+
+plant_a <- plants_df %>% 
+  select(type, color) %>% 
+  map_chr(min)
+
+plant_a # Returns "bush" and "blue"
+
+
+```
+
+
+### Example 4. Use map_df to read in and combine multiple files simultaneously with map_df!
+
+I won't include active code here (so that this is just a self-contained doc), but let's say you have 4 files (df_a.csv, df_b.csv, df_c.csv, and df_d.csv) and you want to read them in and combine them into a data frame. 
+
+You could use the following (in a code chunk or script):
+
+    my_files <- c("df_a.csv", "df_b.csv", df_c.csv", "df_d.csv")
+    map_df(my_files, read_csv)
+    
+Cool! 
+
+Also see: Emil Hirvfeldt's great post on [purrr tips and tricks](https://www.hvitfeldt.me/blog/purrr-tips-and-tricks/), including how to read in a list of files w/ title strings that match a filename pattern. 
+
+### Example 5: Use map to find column means instead of col_means, by group? Actually nevermind on this one. 
+
+Using the plants_df mock data from above: 
+
+...still working on what this would look like if using map instead? 
+```{r}
+
+# The way I'd normally do it: gather, group_by, summarize
+plant_means <- plants_df %>% 
+  gather("measurement","obs_value", height:girth) %>% 
+  group_by(type, measurement) %>% 
+  summarize(
+    mean_obs = mean(obs_value),
+    sd_obs = sd(obs_value)
+  )
+
+plant_means
+
+# Trying with map():
+# Not sure how to do this...
+
+```
+
+
+### Example 6. Use map to run a linear model for each factor level...simultaneously!
+```{r}
+# Making more mock data here: 
+
+dose_df <- tribble(
+  ~species, ~dose, ~size,
+  "weeble", 0.0, 3.0,
+  "weeble", 0.1, 4.0,
+  "weeble", 0.5, 6.0,
+  "weeble", 1.0, 10.0,
+  "fobble", 0.0, 2.0,
+  "fobble", 0.1, 2.5,
+  "fobble", 0.5, 3.2,
+  "fobble", 1.0, 4.0,
+  "borble", 0.0, 0.5,
+  "borble", 0.1, 5.0,
+  "borble", 0.5, 12.4,
+  "borble", 1.0, 19.6
+)
+```
+
+I want to find a linear model that describes the relationship between dose and size for each of the three species. I could do that separately, like this: 
+
+```{r}
+weeble_lm <- dose_df %>% 
+  filter(species == "weeble") %>% 
+  lm(size ~ dose, data = .) 
+
+# Which gives me a linear model: 
+weeble_lm
+```
+
+...and I could repeat the same for fobbles and borbles. But that seems repetetive, right? Lesson: if something seems repetetive in R, there's probably a way to do it more efficiently. purrr::map() might be that way. 
+
+Here's a way to get the lm for all three species at the same time (I recommend seeing what happens after you run each line).
+```{r}
+
+species_lm <- dose_df %>% # From the dose_df data frame...
+  mutate(species = factor(species)) %>% # Convert species to a factor...
+  split(.$species) %>% # Split into groups by factor levels in the species column
+  map(~lm(size ~ dose, data = .)) %>% # Runs lm() on size ~ dose for each of the subsets created in split! 
+  map(summary) # Applies the summary function to each
+
+
+# WHOA. Three linear models at once? Cool! And you can see them all together (species_lm) or recall their info separately. Like for borbles:
+
+species_lm$borble # Returns the model summary for borbles!
+
+# So great.
+```
+
+You might also just want to get a specific value from the model outputs for each species. Say I want the R^2^ value for each model:
+```{r}
+model_r_square <- species_lm %>% 
+  map_dbl("r.squared") # Get the r.squared component from each model summary, with map_dbl making it an atomic vector (instead of a list) - nice option!
+
+model_r_square # Report them (check it out!)
+```
+
+### Example 7. Use map() to run multiple t-tests simultaneously 
+
+First, I'll make some mock data:
+```{r}
+# Make some mock data: 
+
+weather_df <- tribble(
+  ~city, ~rain, ~temp,
+  "Bishop", 0.4, 53,
+  "Bishop", 0.2, 48,
+  "Reno", 0.1, 52,
+  "Bishop", 0.5, 57,
+  "Bishop", 0.4, 56,
+  "Reno", 0.2, 41,
+  "Reno", 0.1, 39,
+  "Reno", 0.3, 38,
+  "Bishop", 0.6, 65
+)
+```
+
+I want to answer the question: Is there a significant difference in rainfall *and* temperature for the two cities (Bishop and Reno)? Disclaimer: assume I've already done all the critical thinking, exploratory analaysis and visualization that would make me confident a t-test is useful and appropriate to compare means of the two variables. 
+
+Examples adapted from [this discussion](https://community.rstudio.com/t/t-tests-over-several-variables-using-a-tibble-of-lists/27214/5) and [Sebastian Sauer's great post on looping w/purrr](https://sebastiansauer.github.io/looping-purrr/).
+
+Now, use the map() function to perform t-tests on both rain and temp columns for the two groups in 'city': 
+```{r}
+
+# Example with my mock data: 
+df_ttest <- weather_df %>% 
+  gather("weather_metric","value", rain:temp) %>% 
+  group_nest(weather_metric) %>% 
+  mutate(t_test = map(data, ~tidy(t.test(value ~ city, data = .x)))) %>% 
+  unnest(t_test)
+
+df_ttest
+
+# Another option that might make more sense:
+
+df_ttest_2 <- weather_df %>% 
+  select_if(is.numeric) %>% 
+  map(~t.test(. ~ weather_df$city)) # Note: to report just p-values, updated last line to map(~t.test(. ~ weather_df$city)$p.value)
+
+df_ttest_2 # Cool! Gives the full t-test results for each. 
+
+```
+
+
+
+### Example 8. Subset and map to filter and find correlations
+
+Using the weather_df mock data created above: 
+```{r}
+
+unique(weather_df$city) %>% # Finds unique strings in city column (Bishop, Reno)
+  map(~ filter(weather_df, city ==.)) %>% # Multiple filterings
+  map_dbl(~ cor(.$rain, .$temp)) # Reports correlations for the two cities 
+
+```
+
+### Example 9. Map conditionally
+
+Example code: Thanks to [Bruno Rodrigues](https://www.brodrigues.co/blog/2017-03-24-lesser_known_purrr/)
+
+If the temp in the weather_df data frame created above is > 50, then take the square root of that value. 
+```{r}
+
+temp_sr <- weather_df$temp %>% 
+  map_if(. > 50, sqrt) # Only takes the square root of temp values > 50; otherwise returns the original temp
+
+temp_sr
+
+```
+
+### Example 10. Use map to extract information from lists 
+
+Based on [Jenny Bryan's introduction to map()](https://jennybc.github.io/purrr-tutorial/ls01_map-name-position-shortcuts.html).
+
+First, I'll make some mock list data: 
+```{r}
+
+# Make individual lists
+tiger <- list(species = "tiger", name = "Cuddle", weight = 150, age = 12)
+shark <- list(species = "shark", name = "Teeth", weight = 302, age = 15)
+dragon <- list(species = "dragon", name = "Firebreath", weight = 2400, age = 4)
+
+# Merge them together
+animals <- list(tiger,shark,dragon)
+names(animals) <- c("earth","water","fantasy")
+
+# Now use map() to access the name of each: 
+
+map(animals,"name") # See output
+map(animals, "species") # See output
+map(animals, "age") # See output. Cool!
+```
+
+But just map() returns them as a list. What if we'd rather have them returned as a specified type (character, dbl, etc.)? Use the map_*() options. 
+
+```{r}
+
+animal_names <- map_chr(animals, "name")
+animal_names # Returns a character vector
+
+animal_ages <- map_dbl(animals, "age")
+animal_ages # Returns a dbl (numeric) vector...could also use map_int here for integers
+
+```
+
+What if I want to extract multiple variables from each entity in a list? Like, I want the name and weight of all of the different entities? 
+
+You can use the extract() function from magrittr package (thanks again to Jenny Bryan - see link above). 
+```{r}
+
+name_weight <- map(animals, extract, c("name","weight"))
+name_weight # Tada! 
+
+# Want to put those into a data frame? 
+
+name_weight_df <- map_df(animals, extract, c("name","weight"))
+name_weight_df # Cool. 
+
+```
+

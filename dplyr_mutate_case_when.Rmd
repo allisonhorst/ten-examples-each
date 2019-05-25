@@ -1,0 +1,179 @@
+---
+title: "Ten examples using dplyr::mutate + dplyr::case_when"
+author: "Allison Horst"
+date: "5/2/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+- [dplyr::mutate](https://dplyr.tidyverse.org/reference/mutate.html): create variables (columns) 
+
+- [dplyr::case_when](https://dplyr.tidyverse.org/reference/case_when.html): intuitive if/if-else (for example: every time the word "wow" shows up in this column, I want the word "positive" to show up in the new column I create with mutate)
+
+Using dplyr::mutate and dplyr::case_when in combination I think of as "I want to add a new column, where the entries in that new column are conditional based on what exists (value or character) in an existing column."
+
+Load the tidyverse:
+```{r, warning = FALSE}
+suppressMessages(library(tidyverse)) # load tidyverse & suppress messages
+```
+
+Make some mock data: 
+```{r}
+df <- tribble(
+  ~col_a, ~col_b, ~col_c,
+  "wow", 5, "dog",
+  "nope", 2, "cat",
+  "wow", 4, "dog",
+  "ok", 3, "dog",
+  "nope", 1, "dog",
+  "wow", NA, "cat",
+  "ok", 2, "cat"
+)
+
+```
+
+## Ten examples of how to use dplyr::mutate + dplyr::case_when together in slightly different ways: 
+
+### Example 1. Adding a new character column with entries based on an existing character column
+
+*I want to add a new column (col_d) based on responses in existing col_a. If col_a is "wow" then col_d should be "positive"; if col_a is "ok", then col_d should be "neutral"; if col_a is "nope" then col_d should be "negative."*
+
+```{r}
+
+df_1 <- df %>% # Make a new data frame 'df_1', using data from 'df' and then...
+  mutate( # Adding a new column called...
+    col_d = case_when( # 'col_d', which contains conditional entries where...
+      col_a == "wow" ~ "positive", # when col_a is "wow", col_d should be "positive"...
+      col_a == "ok" ~ "neutral", # when col_a is "ok", col_d should be "neutral"...
+      col_a == "nope" ~ "negative" # and when col_a is "nope", col_d should be "negative"
+    )
+  )
+
+```
+
+### Example 2. Adding a new character column with entries based on existing numeric column
+
+*I want to add a new column 'col_d' to df, where if col_b is greater than 3, then col_d is "high"; if col_b is 3, then col_d is "middle"; and if col_b is less than 3, then col_d is "low".*
+
+```{r}
+
+df_2 <- df %>% # Take original data frame df, and then...
+  mutate( # add a new column called....
+    col_d = case_when( # col_d, which contains conditional entries where...
+      col_b > 3 ~ "high", # if col_b > 3, col_d is "high"...
+      col_b == 3 ~ "middle", # if col_b = 3, col_d is "middle" (notice double == here)...
+      col_b < 3 ~ "low" # if col_b < 3, col_d is "low
+    )
+  )
+
+```
+
+### Example 3. Adding a numeric column based on info in an existing character column
+
+*I want to make a new column 'col_d' where: if col_c is "cat", then col_d should be 1; if col_c is "dog", then col_d should be 2.*
+
+```{r}
+
+df_3 <- df %>% # Create a new data frame 'df_3', start with 'df' and then...
+  mutate( # add a column...
+    col_d = case_when( # called 'col_d' that contains conditional entries where...
+      col_c == "cat" ~ 1, # if col_c is "cat", then col_d should be 1...
+      col_c == "dog" ~ 2 # and if col_c is "dog", then col_d should be 2
+    )
+  )
+
+```
+
+### Example 4. Adding a numeric column that is *calculated* from an existing column(s)
+
+*I want to create a new column col_d, which: if col_a is "wow", then col_d will be 10 x col_b; if col_a is "nope" or "ok", then col_d will be 100 x col_b.*
+
+```{r}
+
+df_4 <- df %>% # Create a new data frame 'df_4', starting with 'df' and then...
+  mutate( # add a column...
+    col_d = case_when( # called 'col_d' that contains conditional entries where...
+      col_a == "wow" ~ col_b*10, # if col_a is "wow", then col_d should be 10*col_b...
+      col_a == "ok" | col_a == "nope" ~ col_b*100 # if col_a is "ok" or "nope", then col_d = 100*col_b
+    )
+  )
+
+```
+
+### Example 5. Add a new column that contains "this" if one condition is met, or "that" in any other case
+
+*If col_a is "ok", then col_d should contain "so-so"; if col_a is anything ELSE, then col_d should contain "not ok".*
+
+```{r}
+
+# Note: adding 'TRUE ~ ' at the end of your set conditions seems like (?) saying "and for any other scenarios that I haven't specified, set those to [this thing]."
+
+df_5 <- df %>% # Create a new data frame 'df_5', starting with 'df' and then...
+  mutate( # add a column...
+    col_d = case_when( # called 'col_d' that contains conditional entries where...
+      col_a == "ok" ~ "so-so", # if col_a is "ok", then col_d should be "so-so"...
+      TRUE ~ "not ok" # if col_a is "wow" or "nope", then col_d is "not ok"
+    )
+  )
+
+```
+
+### Example 6. Assign a value / character to existing 'NA's
+
+*I want to create a new column that is "present" if col_b is not NA, and "absent" if col_b is NA.*
+
+```{r}
+
+df_6 <- df %>% # Create a new data frame 'df_6', starting with 'df' and then...
+  mutate( # add a column...
+    col_d = case_when( # called 'col_d' that contains conditional entries where...
+      !is.na(col_b) ~ "present", # if col_b is NOT NA, return "present" in col_d
+      is.na(col_b) ~ "absent" # if col_b IS NA, return "absent" in col_d
+    )
+  )
+
+```
+
+### Example 7. New column entry based on conditions for multiple variables
+
+*If col_a is "wow" AND col_c is "dog", then col_d should be "yes." Otherwise, col_d should be "no".*
+
+```{r}
+
+df_7 <- df %>% 
+  mutate( 
+    col_d = case_when(
+      col_a == "wow" & col_c == "dog" ~ "yes",
+      TRUE ~ "no"
+    )
+  )
+
+```
+
+### Example 8. Combining with other wranglings
+
+*First I want to only keep observations where col_c is "dog," then select columns col_a through col_c, then add a column col_d that is twice col_b if col_a is "wow", otherwise 0.*
+
+```{r}
+
+df_8 <- df %>% 
+  filter(col_c == "dog") %>% 
+  select(col_a:col_c) %>% 
+  mutate(
+    col_d = case_when(
+      col_a == "wow" ~ 2*col_b,
+      TRUE ~ 0
+    )
+    )
+
+```
+
+### Example 9. Setting levels with case_when: operates sequentially, so you only need to give one endpoint for each bin.
+
+```{r}
+
+```
+

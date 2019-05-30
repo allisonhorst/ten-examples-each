@@ -133,7 +133,9 @@ function_six <- function(val_1,val_2,to_do){
   )
 }
 
-function_six(10,30,2)
+function_six(10,30,1) # Returns 0.333 bc the '1' here indicates do the first option (calc_decimal)
+
+function_six(10,30,2) # Returns 33.3 bc the '2' here indicates do the second option (calc_percent)
 
 ```
 

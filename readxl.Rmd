@@ -1,0 +1,101 @@
+---
+title: "Ten examples: readxl"
+author: "Allison Horst"
+date: "8/8/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The {readxl} package provides a straightforward way to import data from Excel (.xls or .xlxs) from one or multiple worksheets. Here are some places to start learning more about readxl: 
+
+- https://readxl.tidyverse.org/
+
+- https://rpubs.com/tf_peterson/readxl_import
+
+```{r include=FALSE}
+library(tidyverse)
+library(readxl)
+```
+
+Here, I'll use the 'coral.xlsx' file (see information here: https://catalog.data.gov/dataset/effects-of-thermal-stress-and-nitrate-enrichment-on-the-larval-performance-of-two-caribbean-ree/resource/32942be2-4bfe-4e4a-9648-097525cee05e)
+
+1. Reading in the first worksheet:
+```{r}
+
+coral_1 <- read_excel("coral.xlsx") # Note that this reads in the first worksheet (not subsequent). Yay! 
+
+```
+
+2. Reading in only some rows or columns from the first worksheet:
+```{r}
+
+# Read in rows 1 - 8 (note: this INCLUDES the header)
+coral_2a <- read_excel("coral.xlsx", range = cell_rows(1:8))
+
+# Read in columns 2 and 3
+coral_2b <- read_excel("coral.xlsx", range = cell_cols(c(2,3)))
+
+# Read in range A10:C15
+coral_2c <- read_excel("coral.xlsx", range = "A1:C10")
+
+```
+
+3. To read in a single worksheet that is NOT the first one (by worksheet name or position)
+```{r}
+
+coral_3 <- read_excel("coral.xlsx", sheet = "Pastreoides respiration")
+
+```
+
+4. To read in a single worksheet by name, choose a range, and set column names: 
+```{r}
+
+coral_4a <- read_excel("coral.xlsx", 
+                      sheet = "Pastreoides respiration", 
+                      range = "A4:C10", 
+                      col_names = c("nutrient_level","temp","ox_cons")
+                      )
+
+# Alternatively, reference by worksheet position (but this is risky, since they can be moved around...)
+
+coral_4b <- read_excel("coral.xlsx",
+                       sheet = 2,
+                       range = "A4:C10",
+                       col_names = c("nutrients","temp","ox"))
+
+```
+
+5. To read in multiple worksheets: 
+```{r}
+
+path <- "coral.xlsx"
+
+coral_5 <- path %>% 
+  excel_sheets() %>% 
+  set_names() %>% 
+  map_df(read_excel, 
+      path = path)
+
+# Question: This binds data from all 3 worksheets together in sequential rows...what if we want to have them be separate data frames? Any way to load as separate dfs? 
+
+```
+
+6. Reassigning a character (or whatever) to NA when read into R: 
+```{r}
+
+# Anywhere "Low" appears, replace in R with 'NA'
+coral_6 <- read_excel("coral.xlsx", na = "Low") 
+
+```
+
+7. Skipping the first *n* rows (auto-excludes leading empty rows). This is a good way in case there is additional (unnecessary descriptive) information in the top *n* rows.
+```{r}
+
+coral_7 <- read_excel("coral.xlsx", skip = 3, col_names = c("one","two","three"))
+
+```
+
+8, 9, 10. More involved examples here...
